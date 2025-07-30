@@ -40,7 +40,7 @@ const NotificationSchema: Schema<Notification> = new Schema({
   createdAt: {
     type: Date,
     default: Date.now,
-    expires: 120
+    expires: 86400
   },
   relatedId: {
     type: Schema.Types.ObjectId

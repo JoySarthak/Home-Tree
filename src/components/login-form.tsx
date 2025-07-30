@@ -84,7 +84,7 @@ export function LoginForm({
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
               <div className="flex flex-col gap-3">
-                <Button type="submit" className="w-full">
+                <Button type="submit" className="w-full" onClick={() => router.push("/dashboard")}>
                   Login
                 </Button>
                 <Button

@@ -62,6 +62,22 @@ export default function GroceryPage() {
     };
     fetchFamilyMembers();
   }, []);
+  // Add this auto-refresh for family members ▼
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/family');
+        if (res.ok) {
+          const data = await res.json();
+          setFamilyMembers(data.members || []);
+        }
+      } catch (e) {
+        console.error('Family members refresh error:', e);
+      }
+    }, 60 * 1000); // 1 minute
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Fetch active grocery list on component mount
   useEffect(() => {
@@ -82,6 +98,22 @@ export default function GroceryPage() {
     };
 
     fetchActiveList();
+  }, []);
+  //auto-refresh for grocery list ▼
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch('/api/grocery');
+        if (response.ok) {
+          const data = await response.json();
+          setGroceryList(data);
+        }
+      } catch (error) {
+        console.error('Auto-refresh error:', error);
+      }
+    }, 60 * 1000); // 1 minute
+
+    return () => clearInterval(interval);
   }, []);
 
   const addItem = async () => {
