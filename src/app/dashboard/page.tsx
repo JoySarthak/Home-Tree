@@ -1,20 +1,17 @@
 "use client"
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset } from "@/components/ui/sidebar";
 import Dashboard from "@/components/pages/dashboard";
 
 export default function Page() {
-  const router = useRouter();
-
   useEffect(() => {
-    const interval = setTimeout(() => {
-      router.refresh(); // Refresh the page
+    const interval = setInterval(() => {
+      window.location.reload(); // Force full page reload
     }, 2 * 60 * 1000); // 2 minutes in milliseconds
 
-    return () => clearTimeout(interval); // Clean up on component unmount
-  }, [router]);
+    return () => clearInterval(interval); // Clean up on component unmount
+  }, []);
 
   return (
     <SidebarInset>
@@ -23,5 +20,5 @@ export default function Page() {
         <Dashboard />
       </div>
     </SidebarInset>
-  )
+  );
 }
