@@ -76,18 +76,18 @@ const Homepage = () => {
                 modern family, built for the future.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/sign-up">
-                  <Button size="lg" className="text-lg px-8 py-6">
-                    Sign up & Try now
-                  </Button>
-                </Link>'
                 <Link href="/dashboard">
+                  <Button size="lg" className="text-lg px-8 py-6">
+                    Try Now
+                  </Button>
+                </Link>
+                <Link href="/info">
                 <Button
                   variant="outline"
                   size="lg"
-                  className="text-lg px-8 py-6"
+                  className="text-lg px-8 py-6 border-slate-800 text-slate-800"
                 >
-                  Dashboard
+                  About Us
                 </Button>
                 </Link>
               </div>
@@ -229,7 +229,7 @@ const Homepage = () => {
               <ul className="space-y-2">
                 <li>
                   <a
-                    href="#"
+                    href="/info"
                     className="hover:text-slate-100 transition-colors"
                   >
                     About Us
