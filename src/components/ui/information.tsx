@@ -90,8 +90,7 @@ export default function ForgotPass() {
               </h3>
               <p className="text-slate-600 mb-2">Team lead</p>
               <p className="text-sm text-slate-500 mb-4">
-                Backend Api Handling, Frontend Designing, Fullstack Management,
-                Schema Designing.
+                Backend Api Designing, Frontend Designing with shadcn, Schema Designing. Fullstack Management. 
               </p>
               <div className="flex justify-center space-x-4">
                 <a
