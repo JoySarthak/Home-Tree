@@ -1,15 +1,15 @@
-"use client"
-import React, { useState, useEffect } from 'react';
-import { Calendar, Zap, Tv, Wifi, Home, Plus, Edit2 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useSession } from 'next-auth/react';
+"use client";
+import React, { useState, useEffect } from "react";
+import { Calendar, Zap, Tv, Wifi, Home, Plus, Edit2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useSession } from "next-auth/react";
 
 interface BillEntry {
   amount: number;
   dueDate: Date;
   isPaid?: boolean;
   paidDate?: Date;
-  status: 'pending' | 'paid' | 'overdue';
+  status: "pending" | "paid" | "overdue";
 }
 
 interface Bills {
@@ -26,7 +26,7 @@ interface BillCategory {
   icon: React.ComponentType<any>;
   color: string;
   bgColor: string;
-  key: keyof Omit<Bills, '_id' | 'family_id'>;
+  key: keyof Omit<Bills, "_id" | "family_id">;
 }
 
 const BillOverview = () => {
@@ -37,20 +37,44 @@ const BillOverview = () => {
   const [addingBill, setAddingBill] = useState<string | null>(null);
 
   const billCategories: BillCategory[] = [
-    { name: 'Electricity', icon: Zap, color: 'text-yellow-500', bgColor: 'bg-yellow-50', key: 'electricity' },
-    { name: 'Cable TV', icon: Tv, color: 'text-blue-500', bgColor: 'bg-blue-50', key: 'cable' },
-    { name: 'Internet', icon: Wifi, color: 'text-purple-500', bgColor: 'bg-purple-50', key: 'wifi' },
-    { name: 'Property Tax', icon: Home, color: 'text-red-500', bgColor: 'bg-red-50', key: 'tax' }
+    {
+      name: "Electricity",
+      icon: Zap,
+      color: "text-yellow-500",
+      bgColor: "bg-yellow-50",
+      key: "electricity",
+    },
+    {
+      name: "Cable TV",
+      icon: Tv,
+      color: "text-blue-500",
+      bgColor: "bg-blue-50",
+      key: "cable",
+    },
+    {
+      name: "Internet",
+      icon: Wifi,
+      color: "text-purple-500",
+      bgColor: "bg-purple-50",
+      key: "wifi",
+    },
+    {
+      name: "Property Tax",
+      icon: Home,
+      color: "text-red-500",
+      bgColor: "bg-red-50",
+      key: "tax",
+    },
   ];
 
   // Fetch bills from API
   const fetchBills = async () => {
     try {
-      const response = await fetch('/api/overview');
+      const response = await fetch("/api/overview");
       if (response.ok) {
         const data = await response.json();
         setBills(data.bills);
-        
+
         // Check and update overdue status
         if (data.bills) {
           await checkAndUpdateOverdueStatus(data.bills);
@@ -59,7 +83,7 @@ const BillOverview = () => {
         setBills(null);
       }
     } catch (error) {
-      console.error('Error fetching bills:', error);
+      console.error("Error fetching bills:", error);
       setBills(null);
     } finally {
       setLoading(false);
@@ -72,14 +96,16 @@ const BillOverview = () => {
     const overdueUpdates: { [key: string]: any } = {};
 
     // Check each bill type
-    ['electricity', 'cable', 'wifi', 'tax'].forEach(billType => {
-      const bill = currentBills[billType as keyof Bills] as BillEntry | undefined;
-      if (bill && bill.status !== 'paid') {
+    ["electricity", "cable", "wifi", "tax"].forEach((billType) => {
+      const bill = currentBills[billType as keyof Bills] as
+        | BillEntry
+        | undefined;
+      if (bill && bill.status !== "paid") {
         const dueDate = new Date(bill.dueDate);
-        if (dueDate < today && bill.status !== 'overdue') {
+        if (dueDate < today && bill.status !== "overdue") {
           overdueUpdates[billType] = {
             ...bill,
-            status: 'overdue'
+            status: "overdue",
           };
         }
       }
@@ -88,15 +114,15 @@ const BillOverview = () => {
     // Update overdue bills
     for (const [billType, billUpdates] of Object.entries(overdueUpdates)) {
       try {
-        await fetch('/api/overview', {
-          method: 'PUT',
+        await fetch("/api/overview", {
+          method: "PUT",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             billType,
-            updates: billUpdates
-          })
+            updates: billUpdates,
+          }),
         });
       } catch (error) {
         console.error(`Error updating overdue status for ${billType}:`, error);
@@ -117,23 +143,23 @@ const BillOverview = () => {
 
   const resetBillToOriginal = async (billType: string) => {
     if (!bills) return;
-    
+
     try {
-      const response = await fetch('/api/overview', {
-        method: 'PUT',
+      const response = await fetch("/api/overview", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           billType,
           updates: {
             amount: 0,
-            dueDate: new Date().toISOString().split('T')[0],
-            status: 'pending',
+            dueDate: new Date().toISOString().split("T")[0],
+            status: "pending",
             isPaid: false,
-            paidDate: undefined
-          }
-        })
+            paidDate: undefined,
+          },
+        }),
       });
 
       if (response.ok) {
@@ -141,49 +167,53 @@ const BillOverview = () => {
         setEditingBill(null);
       }
     } catch (error) {
-      console.error('Error resetting bill:', error);
+      console.error("Error resetting bill:", error);
     }
   };
 
   const addBillForCategory = async (category: BillCategory) => {
-    console.log('Adding bill for category:', category.key);
+    console.log("Adding bill for category:", category.key);
     setAddingBill(category.key);
-    
+
     try {
       const requestBody = {
         [category.key]: {
           amount: 0,
-          dueDate: new Date().toISOString().split('T')[0],
-          status: 'pending',
-          isPaid: false
-        }
-      };
-      
-      console.log('Request body:', requestBody);
-      
-      const response = await fetch('/api/overview', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+          dueDate: new Date().toISOString().split("T")[0],
+          status: "pending",
+          isPaid: false,
         },
-        body: JSON.stringify(requestBody)
+      };
+
+      console.log("Request body:", requestBody);
+
+      const response = await fetch("/api/overview", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
       });
 
-      console.log('Response status:', response.status);
-      
+      console.log("Response status:", response.status);
+
       if (response.ok) {
         const data = await response.json();
-        console.log('Response data:', data);
+        console.log("Response data:", data);
         await fetchBills();
         setEditingBill(category.key);
       } else {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
-        console.error('Error response:', errorData);
-        alert(`Failed to add bill: ${errorData.error || errorData.details || 'Unknown error'}`);
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Failed to parse error response" }));
+        console.error("Error response:", errorData);
+        alert(
+          `Failed to add bill: ${errorData.error || errorData.details || "Unknown error"}`
+        );
       }
     } catch (error) {
-      console.error('Error adding bill:', error);
-      alert('Failed to add bill. Please try again.');
+      console.error("Error adding bill:", error);
+      alert("Failed to add bill. Please try again.");
     } finally {
       setAddingBill(null);
     }
@@ -191,77 +221,103 @@ const BillOverview = () => {
 
   const updateBill = async (billType: string, field: string, value: any) => {
     if (!bills) return;
-    
+
     try {
-      const currentBill = bills[billType as keyof Bills] as BillEntry | undefined;
+      const currentBill = bills[billType as keyof Bills] as
+        | BillEntry
+        | undefined;
       if (!currentBill) return;
-      
+
       const updates = {
         ...currentBill,
-        [field]: value
+        [field]: value,
       };
 
-      const response = await fetch('/api/overview', {
-        method: 'PUT',
+      const response = await fetch("/api/overview", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           billType,
-          updates
-        })
+          updates,
+        }),
       });
 
       if (response.ok) {
         await fetchBills();
       }
     } catch (error) {
-      console.error('Error updating bill:', error);
+      console.error("Error updating bill:", error);
     }
   };
 
   const markBillAsPaid = async (billType: string) => {
     if (!bills) return;
-    
+
     try {
-      const currentBill = bills[billType as keyof Bills] as BillEntry | undefined;
+      const currentBill = bills[billType as keyof Bills] as
+        | BillEntry
+        | undefined;
       if (!currentBill) return;
-      
+
       const updates = {
         ...currentBill,
-        status: 'paid',
+        status: "paid",
         isPaid: true,
-        paidDate: new Date()
+        paidDate: new Date(),
       };
 
-      const response = await fetch('/api/overview', {
-        method: 'PUT',
+      const response = await fetch("/api/overview", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           billType,
-          updates
-        })
+          updates,
+        }),
       });
 
       if (response.ok) {
         await fetchBills();
       }
     } catch (error) {
-      console.error('Error marking bill as paid:', error);
+      console.error("Error marking bill as paid:", error);
     }
   };
+  const deleteAllBills = async () => {
+    if (
+      !confirm(
+        "Are you sure you want to delete all bills? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
 
+    try {
+      const response = await fetch("/api/overview", {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        await fetchBills(); // Refresh the bills list
+        alert("All bills have been deleted successfully");
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to delete bills: ${errorData.error || "Unknown error"}`);
+      }
+    } catch (error) {
+      console.error("Error deleting bills:", error);
+      alert("Failed to delete bills. Please try again.");
+    }
+  };
   // Helper function to get only bill entries (excluding _id and family_id)
   const getBillEntries = () => {
     if (!bills) return [];
-    return [
-      bills.electricity,
-      bills.cable, 
-      bills.wifi,
-      bills.tax
-    ].filter(bill => bill !== undefined && bill !== null);
+    return [bills.electricity, bills.cable, bills.wifi, bills.tax].filter(
+      (bill) => bill !== undefined && bill !== null
+    );
   };
 
   const getDaysLeft = (dueDate: Date) => {
@@ -273,29 +329,34 @@ const BillOverview = () => {
   };
 
   const getProgressColor = (daysLeft: number, status: string) => {
-    if (status === 'paid') return 'bg-green-500';
-    if (status === 'overdue' || daysLeft < 0) return 'bg-red-500';
-    if (daysLeft <= 3) return 'bg-orange-500';
-    if (daysLeft <= 7) return 'bg-yellow-500';
-    return 'bg-blue-500';
+    if (status === "paid") return "bg-green-500";
+    if (status === "overdue" || daysLeft < 0) return "bg-red-500";
+    if (daysLeft <= 3) return "bg-orange-500";
+    if (daysLeft <= 7) return "bg-yellow-500";
+    return "bg-blue-500";
   };
 
   const getProgressWidth = (daysLeft: number) => {
     const maxDays = 30;
     if (daysLeft < 0) return 100;
-    const percentage = Math.max(0, Math.min(100, ((maxDays - daysLeft) / maxDays) * 100));
+    const percentage = Math.max(
+      0,
+      Math.min(100, ((maxDays - daysLeft) / maxDays) * 100)
+    );
     return percentage;
   };
 
   const getStatusBadge = (status: string) => {
     const statusStyles: Record<string, string> = {
-      paid: 'bg-green-100 text-green-800 border-green-200',
-      pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      overdue: 'bg-red-100 text-red-800 border-red-200'
+      paid: "bg-green-100 text-green-800 border-green-200",
+      pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
+      overdue: "bg-red-100 text-red-800 border-red-200",
     };
-    
+
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${statusStyles[status] || statusStyles.pending}`}>
+      <span
+        className={`inline-block px-2 py-1 text-xs font-medium rounded-full border ${statusStyles[status] || statusStyles.pending}`}
+      >
         {status}
       </span>
     );
@@ -303,9 +364,11 @@ const BillOverview = () => {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto p-6 bg-slate-50 min-h-screen">
+      <div className="max-w-4xl mx-auto p-4 sm:p-6 bg-slate-50 min-h-screen">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Bill Management</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
+            Bill Management
+          </h1>
           <p className="text-slate-600">Loading bills...</p>
         </div>
       </div>
@@ -313,38 +376,55 @@ const BillOverview = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-slate-50 min-h-screen">
+    <div className="max-w-4xl mx-auto p-4 sm:p-6 bg-slate-50 min-h-screen">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Bill Management</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
+          Bill Management
+        </h1>
         <p className="text-slate-600">Track and manage your recurring bills</p>
       </div>
 
-      <div className="grid gap-6">
+      <div className="grid gap-4 sm:gap-6">
         {billCategories.map((category) => {
-          const existingBill = bills ? bills[category.key] as BillEntry : null;
-          
+          const existingBill = bills
+            ? (bills[category.key] as BillEntry)
+            : null;
+
           if (!existingBill) {
             // Show add button for categories without bills
             const IconComponent = category.icon;
             return (
-              <div key={category.name} className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className={`p-3 rounded-lg ${category.bgColor}`}>
-                      <IconComponent className={`w-6 h-6 ${category.color}`} />
+              <div
+                key={category.name}
+                className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 sm:p-6"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center space-x-3 sm:space-x-4">
+                    <div
+                      className={`p-2 sm:p-3 rounded-lg ${category.bgColor} flex-shrink-0`}
+                    >
+                      <IconComponent
+                        className={`w-5 h-5 sm:w-6 sm:h-6 ${category.color}`}
+                      />
                     </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-slate-900">{category.name}</h3>
-                      <p className="text-sm text-slate-500">No bill added yet</p>
+                    <div className="min-w-0">
+                      <h3 className="text-base sm:text-lg font-semibold text-slate-900 truncate">
+                        {category.name}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-slate-500">
+                        No bill added yet
+                      </p>
                     </div>
                   </div>
                   <button
                     onClick={() => addBillForCategory(category)}
                     disabled={addingBill === category.key}
-                    className="flex items-center space-x-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors border border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors border border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto flex-shrink-0"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>{addingBill === category.key ? 'Adding...' : 'Add Bill'}</span>
+                    <span className="text-sm">
+                      {addingBill === category.key ? "Adding..." : "Add Bill"}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -358,29 +438,42 @@ const BillOverview = () => {
           const isEditing = editingBill === category.key;
 
           return (
-            <div key={category.name} className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-4">
-                  <div className={`p-3 rounded-lg ${category.bgColor}`}>
-                    <IconComponent className={`w-6 h-6 ${category.color}`} />
+            <div
+              key={category.name}
+              className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 sm:p-6"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-4 gap-4">
+                <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
+                  <div
+                    className={`p-2 sm:p-3 rounded-lg ${category.bgColor} flex-shrink-0`}
+                  >
+                    <IconComponent
+                      className={`w-5 h-5 sm:w-6 sm:h-6 ${category.color}`}
+                    />
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-slate-900">{category.name}</h3>
-                    <div className="flex items-center space-x-3 mt-1">
-                      {getStatusBadge(bill.status)}
-                      <span className="text-sm text-slate-500">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-base sm:text-lg font-semibold text-slate-900 truncate">
+                      {category.name}
+                    </h3>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 mt-1 gap-1 sm:gap-0">
+                      <div className="flex-shrink-0 w-fit">
+                        {getStatusBadge(bill.status)}
+                      </div>
+                      <span className="text-xs sm:text-sm text-slate-500">
                         Due: {new Date(bill.dueDate).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-2xl font-bold text-slate-900">
-                    {bill.amount.toFixed(2)}
+                <div className="flex items-center justify-between sm:justify-end space-x-2 flex-shrink-0">
+                  <span className="text-xl sm:text-2xl font-bold text-slate-900">
+                    ${bill.amount.toFixed(2)}
                   </span>
                   <button
-                    onClick={() => setEditingBill(isEditing ? null : category.key)}
-                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                    onClick={() =>
+                      setEditingBill(isEditing ? null : category.key)
+                    }
+                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
@@ -388,9 +481,9 @@ const BillOverview = () => {
               </div>
 
               {isEditing && (
-                <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
+                <div className="mb-6 p-3 sm:p-4 bg-slate-50 rounded-lg border border-slate-200">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                    <div className="sm:col-span-2 lg:col-span-1">
                       <label className="block text-sm font-medium text-slate-700 mb-2">
                         Amount
                       </label>
@@ -398,21 +491,29 @@ const BillOverview = () => {
                         type="number"
                         step="0.01"
                         value={bill.amount}
-                        onChange={(e) => updateBill(category.key, 'amount', parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent mb-2"
+                        onChange={(e) =>
+                          updateBill(
+                            category.key,
+                            "amount",
+                            parseFloat(e.target.value) || 0
+                          )
+                        }
+                        className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent mb-2 text-sm"
                       />
-                      <button
-                        onClick={() => markBillAsPaid(category.key)}
-                        className="w-full px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors mb-2"
-                      >
-                        Mark as Paid
-                      </button>
-                      <button
-                        onClick={() => resetBillToOriginal(category.key)}
-                        className="w-full px-3 py-2 bg-gray-600 text-white text-sm rounded-md hover:bg-gray-700 transition-colors"
-                      >
-                        Reset
-                      </button>
+                      <div className="grid grid-cols-1 gap-2">
+                        <button
+                          onClick={() => markBillAsPaid(category.key)}
+                          className="w-full px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
+                        >
+                          Mark as Paid
+                        </button>
+                        <button
+                          onClick={() => resetBillToOriginal(category.key)}
+                          className="w-full px-3 py-2 bg-gray-600 text-white text-sm rounded-md hover:bg-gray-700 transition-colors"
+                        >
+                          Reset
+                        </button>
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -420,9 +521,17 @@ const BillOverview = () => {
                       </label>
                       <input
                         type="date"
-                        value={new Date(bill.dueDate).toISOString().split('T')[0]}
-                        onChange={(e) => updateBill(category.key, 'dueDate', new Date(e.target.value))}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                        value={
+                          new Date(bill.dueDate).toISOString().split("T")[0]
+                        }
+                        onChange={(e) =>
+                          updateBill(
+                            category.key,
+                            "dueDate",
+                            new Date(e.target.value)
+                          )
+                        }
+                        className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm"
                       />
                     </div>
                     <div>
@@ -431,7 +540,9 @@ const BillOverview = () => {
                       </label>
                       <select
                         value={bill.status}
-                        onChange={(e) => updateBill(category.key, 'status', e.target.value)}
+                        onChange={(e) =>
+                          updateBill(category.key, "status", e.target.value)
+                        }
                         className="w-full px-2 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm"
                       >
                         <option value="pending">Pending</option>
@@ -439,7 +550,7 @@ const BillOverview = () => {
                         <option value="overdue">Overdue</option>
                       </select>
                     </div>
-                    <div className="flex items-end">
+                    <div className="flex items-end sm:col-span-2 lg:col-span-1">
                       <button
                         onClick={() => setEditingBill(null)}
                         className="w-full px-4 py-2 bg-slate-600 text-white text-sm rounded-md hover:bg-slate-700 transition-colors"
@@ -453,68 +564,101 @@ const BillOverview = () => {
 
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-600">
-                    {bill.status === 'paid' ? 'Paid' : 
-                     daysLeft < 0 ? `${Math.abs(daysLeft)} days overdue` :
-                     daysLeft === 0 ? 'Due today' :
-                     `${daysLeft} days left`}
+                  <span className="text-slate-600 truncate pr-2">
+                    {bill.status === "paid"
+                      ? "Paid"
+                      : daysLeft < 0
+                        ? `${Math.abs(daysLeft)} days overdue`
+                        : daysLeft === 0
+                          ? "Due today"
+                          : `${daysLeft} days left`}
                   </span>
-                  <span className="text-slate-500">
-                    {bill.status === 'paid' ? '100%' : `${Math.round(getProgressWidth(daysLeft))}%`}
+                  <span className="text-slate-500 flex-shrink-0">
+                    {bill.status === "paid"
+                      ? "100%"
+                      : `${Math.round(getProgressWidth(daysLeft))}%`}
                   </span>
                 </div>
-                
+
                 <div className="w-full bg-slate-200 rounded-full h-2">
                   <div
                     className={`h-2 rounded-full transition-all duration-300 ${getProgressColor(daysLeft, bill.status)}`}
-                    style={{ 
-                      width: bill.status === 'paid' ? '100%' : `${getProgressWidth(daysLeft)}%` 
+                    style={{
+                      width:
+                        bill.status === "paid"
+                          ? "100%"
+                          : `${getProgressWidth(daysLeft)}%`,
                     }}
                   />
                 </div>
 
-                {(bill.status === 'overdue' || daysLeft <= 3) && bill.status !== 'paid' && (
-                  <Alert className="border-red-200 bg-red-50">
-                    <AlertDescription className="text-red-800">
-                      {bill.status === 'overdue' 
-                        ? `This bill is ${Math.abs(daysLeft)} days overdue!`
-                        : `This bill is due in ${daysLeft} day${daysLeft === 1 ? '' : 's'}!`
-                      }
-                    </AlertDescription>
-                  </Alert>
-                )}
+                {(bill.status === "overdue" || daysLeft <= 3) &&
+                  bill.status !== "paid" && (
+                    <Alert className="border-red-200 bg-red-50">
+                      <AlertDescription className="text-red-800 text-sm">
+                        {bill.status === "overdue"
+                          ? `This bill is ${Math.abs(daysLeft)} days overdue!`
+                          : `This bill is due in ${daysLeft} day${daysLeft === 1 ? "" : "s"}!`}
+                      </AlertDescription>
+                    </Alert>
+                  )}
               </div>
             </div>
           );
         })}
+        <button
+          onClick={deleteAllBills}
+          className="px-3 py-1.5 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
+        >
+          Delete All Bills
+        </button>
       </div>
-
-      <div className="mt-8 bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-        <h2 className="text-xl font-semibold text-slate-900 mb-4">Summary</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="text-center p-4 bg-slate-50 rounded-lg">
-            <div className="text-2xl font-bold text-slate-900">
-              {bills ? getBillEntries().filter((bill: any) => bill.status === 'paid').length : 0}
+      <div className="mt-6 sm:mt-8 bg-white rounded-lg shadow-sm border border-slate-200 p-4 sm:p-6">
+        <h2 className="text-lg sm:text-xl font-semibold text-slate-900 mb-4">
+          Summary
+        </h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="text-center p-3 sm:p-4 bg-slate-50 rounded-lg">
+            <div className="text-xl sm:text-2xl font-bold text-slate-900">
+              {bills
+                ? getBillEntries().filter((bill: any) => bill.status === "paid")
+                    .length
+                : 0}
             </div>
-            <div className="text-sm text-slate-600">Paid</div>
+            <div className="text-xs sm:text-sm text-slate-600">Paid</div>
           </div>
-          <div className="text-center p-4 bg-yellow-50 rounded-lg">
-            <div className="text-2xl font-bold text-yellow-800">
-              {bills ? getBillEntries().filter((bill: any) => bill.status === 'pending').length : 0}
+          <div className="text-center p-3 sm:p-4 bg-yellow-50 rounded-lg">
+            <div className="text-xl sm:text-2xl font-bold text-yellow-800">
+              {bills
+                ? getBillEntries().filter(
+                    (bill: any) => bill.status === "pending"
+                  ).length
+                : 0}
             </div>
-            <div className="text-sm text-yellow-600">Pending</div>
+            <div className="text-xs sm:text-sm text-yellow-600">Pending</div>
           </div>
-          <div className="text-center p-4 bg-red-50 rounded-lg">
-            <div className="text-2xl font-bold text-red-800">
-              {bills ? getBillEntries().filter((bill: any) => bill.status === 'overdue').length : 0}
+          <div className="text-center p-3 sm:p-4 bg-red-50 rounded-lg">
+            <div className="text-xl sm:text-2xl font-bold text-red-800">
+              {bills
+                ? getBillEntries().filter(
+                    (bill: any) => bill.status === "overdue"
+                  ).length
+                : 0}
             </div>
-            <div className="text-sm text-red-600">Overdue</div>
+            <div className="text-xs sm:text-sm text-red-600">Overdue</div>
           </div>
-          <div className="text-center p-4 bg-green-50 rounded-lg">
-            <div className="text-2xl font-bold text-green-800">
-              {bills ? getBillEntries().reduce((sum: number, bill: any) => sum + bill.amount, 0).toFixed(2) : '0.00'}
+          <div className="text-center p-3 sm:p-4 bg-green-50 rounded-lg col-span-2 lg:col-span-1">
+            <div className="text-xl sm:text-2xl font-bold text-green-800">
+              $
+              {bills
+                ? getBillEntries()
+                    .reduce((sum: number, bill: any) => sum + bill.amount, 0)
+                    .toFixed(2)
+                : "0.00"}
             </div>
-            <div className="text-sm text-green-600">Total Amount</div>
+            <div className="text-xs sm:text-sm text-green-600">
+              Total Amount
+            </div>
           </div>
         </div>
       </div>

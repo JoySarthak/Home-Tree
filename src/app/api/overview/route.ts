@@ -236,3 +236,40 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function DELETE() {
+  try {
+    await dbConnect();
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?._id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = session.user._id;
+    
+    // Get user with family information
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    if (!user.family_ID) {
+      return NextResponse.json({ error: 'User must be part of a family' }, { status: 400 });
+    }
+
+    // Delete the bills document for this family
+    const result = await BillModel.deleteOne({ family_id: user.family_ID });
+    
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ error: 'No bills found to delete' }, { status: 404 });
+    }
+
+    return NextResponse.json({ 
+      message: 'All bills deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting bills:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
