@@ -14,6 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Dialog,
   DialogContent,
@@ -58,6 +59,48 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+function isSameDay(date1: Date, date2: Date): boolean {
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  );
+}
+
+// Helper function to get all days for a calendar month view
+function getCalendarDays(
+  date: Date
+): Array<{ date: Date; isCurrentMonth: boolean }> {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+
+  // First day of the month
+  const firstDay = new Date(year, month, 1);
+  // Last day of the month
+  const lastDay = new Date(year, month + 1, 0);
+
+  // Start from the Sunday of the week that contains the first day
+  const startDay = new Date(firstDay);
+  startDay.setDate(firstDay.getDate() - firstDay.getDay());
+
+  // End on the Saturday of the week that contains the last day
+  const endDay = new Date(lastDay);
+  endDay.setDate(lastDay.getDate() + (6 - lastDay.getDay()));
+
+  const days = [];
+  const current = new Date(startDay);
+
+  while (current <= endDay) {
+    days.push({
+      date: new Date(current),
+      isCurrentMonth: current.getMonth() === month,
+    });
+    current.setDate(current.getDate() + 1);
+  }
+
+  return days;
+}
+
 function displayMedicineTime(time: string | undefined) {
   if (!time) return "Not set";
   // If already contains AM/PM, return as is
@@ -70,6 +113,8 @@ function displayMedicineTime(time: string | undefined) {
   if (h === 0) h = 12;
   return `${h.toString().padStart(2, "0")}:${minute} ${ampm}`;
 }
+
+// import { useState } from "react"; // Removed duplicate import
 
 const Dashboard: React.FC = () => {
   const { toast } = useToast();
@@ -107,6 +152,7 @@ const Dashboard: React.FC = () => {
   const [showAllTodos, setShowAllTodos] = useState(false);
   const [showAllMedicines, setShowAllMedicines] = useState(false);
   const [showAllTasks, setShowAllTasks] = useState(false);
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   // Notification functions
   const deleteNotification = async (notificationId: string) => {
@@ -591,7 +637,6 @@ const Dashboard: React.FC = () => {
   // Debug: Log the todos to see what we're getting
   console.log("Todos in component:", todos);
 
-  const currentDate = new Date();
   const monthNames = [
     "January",
     "February",
@@ -928,59 +973,110 @@ const Dashboard: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-7 gap-1 mb-4">
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                <div
-                  key={day}
-                  className="p-2 text-center text-sm font-medium text-slate-500"
-                >
-                  {day}
+            <div className="w-full overflow-hidden">
+              <div className="rounded-md border w-full p-3">
+                {/* Calendar Header with month switch */}
+                <div className="flex justify-center items-center mb-2">
+                  <button
+                    className="p-1 hover:bg-gray-100 rounded text-lg"
+                    onClick={() => {
+                      const prevMonth = new Date(
+                        currentDate.getFullYear(),
+                        currentDate.getMonth() - 1,
+                        1
+                      );
+                      setCurrentDate(prevMonth);
+                    }}
+                    aria-label="Previous Month"
+                  >
+                    &#8249;
+                  </button>
+                  <h3 className="mx-4 text-base font-medium">
+                    {monthNames[currentDate.getMonth()]}{" "}
+                    {currentDate.getFullYear()}
+                  </h3>
+                  <button
+                    className="p-1 hover:bg-gray-100 rounded text-lg"
+                    onClick={() => {
+                      const nextMonth = new Date(
+                        currentDate.getFullYear(),
+                        currentDate.getMonth() + 1,
+                        1
+                      );
+                      setCurrentDate(nextMonth);
+                    }}
+                    aria-label="Next Month"
+                  >
+                    &#8250;
+                  </button>
                 </div>
-              ))}
+
+                {/* Days of Week Header */}
+                <div className="grid grid-cols-7 gap-0.5 mb-1">
+                  {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
+                    <div
+                      key={day}
+                      className="text-center text-xs font-normal text-gray-500 py-1"
+                    >
+                      {day}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Calendar Days Grid */}
+                <div className="grid grid-cols-7 gap-0.5">
+                  {getCalendarDays(currentDate).map((day, index) => {
+                    const isToday = isSameDay(day.date, new Date());
+                    const hasBill = bills.some((bill: any) =>
+                      isSameDay(day.date, new Date(bill.dueDate))
+                    );
+                    const hasTask = tasks.some((task: any) => {
+                      // Handle different task due date formats
+                      const taskDueDate = task.dueDate;
+                      if (typeof taskDueDate === "string") {
+                        // Handle "Today", "Tomorrow", etc.
+                        if (taskDueDate === "Today") return isToday;
+                        if (taskDueDate === "Tomorrow") {
+                          const tomorrow = new Date();
+                          tomorrow.setDate(tomorrow.getDate() + 1);
+                          return isSameDay(day.date, tomorrow);
+                        }
+                        // Try to parse as date string
+                        try {
+                          return isSameDay(day.date, new Date(taskDueDate));
+                        } catch {
+                          return false;
+                        }
+                      }
+                      return false;
+                    });
+
+                    let cellClasses =
+                      "h-8 flex items-center justify-center text-xs rounded cursor-pointer transition-colors hover:bg-gray-50";
+
+                    if (!day.isCurrentMonth) {
+                      cellClasses += " text-gray-300";
+                    } else if (isToday) {
+                      cellClasses += " bg-gray-900 text-white font-medium";
+                    } else if (hasBill) {
+                      cellClasses += " bg-red-100 text-red-800 font-medium";
+                    } else if (hasTask) {
+                      cellClasses += " bg-blue-100 text-blue-800 font-medium";
+                    } else {
+                      cellClasses += " text-gray-700";
+                    }
+
+                    return (
+                      <div key={index} className={cellClasses}>
+                        {day.date.getDate()}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-7 gap-1">
-              {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => {
-                // Check if this day has bills due
-                const hasBillDue = bills.some((bill: any) => {
-                  const billDate = new Date(bill.dueDate);
-                  return (
-                    billDate.getDate() === day &&
-                    billDate.getMonth() === currentDate.getMonth()
-                  );
-                });
 
-                // Check if this day has tasks due
-                const hasTaskDue = tasks.some((task: any) => {
-                  if (task.dueDate === "Today" && day === currentDate.getDate())
-                    return true;
-                  if (
-                    task.dueDate === "Tomorrow" &&
-                    day === currentDate.getDate() + 1
-                  )
-                    return true;
-                  return false;
-                });
-
-                let dayClass =
-                  "p-2 text-center text-sm hover:bg-slate-100 rounded cursor-pointer";
-
-                if (day === currentDate.getDate()) {
-                  dayClass += " bg-slate-600 text-white";
-                } else if (hasBillDue) {
-                  dayClass += " bg-red-100 text-red-700 font-medium";
-                } else if (hasTaskDue) {
-                  dayClass += " bg-blue-100 text-blue-700 font-medium";
-                } else {
-                  dayClass += " text-slate-700";
-                }
-
-                return (
-                  <div key={day} className={dayClass}>
-                    {day}
-                  </div>
-                );
-              })}
-            </div>
+            {/* Upcoming bills and tasks */}
             <div className="mt-4 space-y-2">
               {bills.slice(0, 2).map((bill: any) => (
                 <div
