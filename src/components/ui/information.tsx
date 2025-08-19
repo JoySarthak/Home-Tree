@@ -132,19 +132,19 @@ export default function ForgotPass() {
               </p>
               <div className="flex justify-center space-x-4">
                 <a
-                  href="#"
+                  href="https://github.com/SoupayanGhosh"
                   className="text-slate-400 hover:text-slate-600 transition-colors"
                 >
                   <Github className="w-5 h-5" />
                 </a>
                 <a
-                  href="#"
+                  href="https://www.linkedin.com/in/soupayan-ghosh-6234682a1"
                   className="text-slate-400 hover:text-slate-600 transition-colors"
                 >
                   <Linkedin className="w-5 h-5" />
                 </a>
                 <a
-                  href="#"
+                  href="https://soupayan-portfolio.vercel.app/"
                   className="text-slate-400 hover:text-slate-600 transition-colors"
                 >
                   <ExternalLink className="w-5 h-5" />
@@ -170,19 +170,19 @@ export default function ForgotPass() {
               </p>
               <div className="flex justify-center space-x-4">
                 <a
-                  href="#"
+                  href="https://github.com/Soham-Hait"
                   className="text-slate-400 hover:text-slate-600 transition-colors"
                 >
                   <Github className="w-5 h-5" />
                 </a>
                 <a
-                  href="#"
+                  href="https://www.linkedin.com/in/soham-hait-8baa59268/"
                   className="text-slate-400 hover:text-slate-600 transition-colors"
                 >
                   <Linkedin className="w-5 h-5" />
                 </a>
                 <a
-                  href="#"
+                  href="https://portfolio-azure-zeta-16.vercel.app/"
                   className="text-slate-400 hover:text-slate-600 transition-colors"
                 >
                   <ExternalLink className="w-5 h-5" />
